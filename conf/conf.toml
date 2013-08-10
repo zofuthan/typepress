@@ -1,0 +1,53 @@
+# 开发调试模式
+debug = false
+# 站群设置
+[blog]
+	# 绑定顶级域名
+	domain= ""
+	# 绑定端口
+	port=8080
+	# 绑定用户id, 顶级域名内容发布者
+	userid=0
+	# domain共享根目录, 共享静态文件可以放置此处
+	root="root"
+
+# 数据库连接
+[db]
+	Host= ""
+	# Socket 和 Host:Port 写一个就可以, Host:Port 优先
+	Socket= ""
+	Database="typepress"
+	User=""
+	Password= ""
+# 日志相关, 目前只实现了文件日志
+[log]
+	# 访问日志, 这只是一个名字, 系统是靠具体设置处理, 名字并不具有特殊性
+	[log.access]
+		# 日志记录格式,用 int Slice 表示, 标志值和含义如下
+		# 1  Ldate         日期 年/月/日
+		# 2  Ltime         时间 时:分:秒
+		# 4  Lmicroseconds 时间 .毫秒于Ltime之后
+		# 8  Llongfile     完整文件名:行号
+		# 16 Lshortfile    文件名，此标志位优先于 Llongfile
+		# 默认值Ldate 和 Ltime
+		flags = []
+		# 文件日志保存的路径
+		schema = "log"
+		# 记录前缀
+		prefix= ""
+		# 日志级别
+		# 0 LOGLEVEL_FATAL
+		# 1 LOGLEVEL_ALERT
+		# 2 LOGLEVEL_ERROR
+		# 3 LOGLEVEL_WARN
+		# 4 LOGLEVEL_CONFIG
+		# 5 LOGLEVEL_INFO
+		# 6 LOGLEVEL_DEBUG
+		level = 5
+	# 错误日志
+	[log.errors]
+		flags = []
+		schema = "log"
+		level = 2
+
+

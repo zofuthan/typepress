@@ -164,10 +164,11 @@ func init() {
 		Postmeta_id: func(s string) bool {
 			return false
 		},
+		// 保留一些名称拒绝注册,?????
 		Site: func(s string) bool {
 			return IsLenRang(s, 3, 20) &&
 				Is09az(s) &&
-				!IsEnum(strings.ToLower(s), "api", "www", "admin", "rss", "blog")
+				!IsEnum(strings.ToLower(s), "api", "www", "admin", "rss", "blog", "mail", "email", "bug", "bbs", "play")
 		},
 		Sitemeta_id: func(s string) bool {
 			return false
