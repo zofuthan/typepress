@@ -7,9 +7,9 @@
 # Folders
 _obj
 _test
+pkg
+bin
 log
-root
-views
 
 # Architecture specific extensions/prefixes
 *.[568vq]

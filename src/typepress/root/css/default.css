@@ -1,0 +1,206 @@
+@charset “utf-8″;
+html{
+	font-family: "Microsoft YaHei UI","Microsoft YaHei","文泉驿等宽微米黑","宋体",Verdana,sans-serif;
+}
+a {
+    text-decoration: none;
+    color: rgb(142, 142, 214);
+}
+a:hover, a:focus {
+    text-decoration: underline;
+}
+.pure-menu a,.pure-menu a:hover,.pure-menu a:focus{
+	color:#99C;
+}
+/* LAYOUT CSS */
+ #layout {
+    margin: 30pt auto;
+    padding: 0;
+    position: relative;
+}
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 25%;
+    margin-left: -25%;
+    background: rgb(24, 33, 61);
+    color: #fff;
+}
+.hero {
+    text-align: center;
+}
+header.page{
+	padding: 10pt;
+	border-bottom: 1px solid #ccc;
+}
+header.page span,.left{
+	float: right;
+}
+.right{
+	float: right;
+}
+.header {
+    text-align: right;
+}
+.brand-title, .brand-tagline {
+    margin: 0;
+}
+.brand-title {
+    /*text-transform: uppercase;*/
+}
+.brand-tagline {
+    font-weight: 300;
+    color: rgb(142, 142, 214);
+}
+.nav-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.nav-item {
+    display: inline-block;
+    *display: inline;
+    zoom: 1;
+}
+.nav-item a {
+    background: transparent;
+    border: 3px solid rgb(103, 103, 180);
+    color: #fff;
+    margin-top: 1em;
+}
+.nav-item a:hover, .nav-item a:focus {
+    border: 3px solid rgb(142, 142, 214);
+    color: rgb(142, 142, 214);
+    text-decoration: none;
+}
+.content-subhead {
+    text-transform: uppercase;
+    color: #aaa;
+    border-bottom: 1px solid #eee;
+    padding: 0.4em 0;
+    font-size: 80%;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+}
+.content {
+    padding: 2em 3em 0;
+}
+.post {
+    padding-bottom: 2em;
+}
+.post-title {
+    font-size: 2em;
+    color: #222;
+    margin-bottom: 0.2em;
+}
+.post-avatar {
+    border-radius: 50px;
+    float: right;
+    margin-left: 1em;
+}
+.post-description {
+    font-family: Georgia, "Cambria", serif;
+    color: #444;
+    line-height: 1.8em;
+}
+.post-meta {
+    color: #999;
+    font-size: 90%;
+    margin: 0;
+}
+.post-category {
+    margin: 0 0.1em;
+    padding: 0.3em 1em;
+    color: #fff;
+    background: #999;
+    font-size: 80%;
+}
+.post-category-design {
+    background: #5aba59;
+}
+.post-category-pure {
+    background: #4d85d1;
+}
+.post-category-yui {
+    background: #8156a7;
+}
+.post-category-js {
+    background: #df2d4f;
+}
+.post-images {
+    margin: 1em 0;
+}
+.post-image-meta {
+    margin-top: -3.5em;
+    margin-left: 1em;
+    color: #fff;
+    text-shadow: 0 1px 1px #333;
+}
+.footer {
+    text-align: center;
+    padding: 1em 0;
+}
+.footer a {
+    color: #ccc;
+    font-size: 80%;
+}
+.footer .pure-menu a:hover, .footer .pure-menu a:focus {
+    background: none;
+}
+
+.nav-inner .pure-menu {
+    background: none repeat scroll 0 0 transparent;
+    border: medium none;
+}
+
+@media screen and (min-width: 240pt) {
+    #layout {
+        max-width: 240pt;
+    }
+}
+@media screen and (min-width: 360pt) {
+    #layout {
+        max-width: 360pt;
+    }
+}
+@media screen and (min-width: 480pt) {
+    #layout {
+        max-width: 480pt;
+    }
+    .content {
+        padding: 2em 1em 0;
+    }
+}
+@media screen and (min-width: 576pt) {
+    #layout {
+        max-width: 546pt;
+    }
+    .sidebar {
+        width: 100%;
+        position: relative;
+        margin: 0;
+    }
+}
+@media screen and (min-width: 744pt) {
+    #layout {
+        max-width: 540pt;
+        padding-left: 200pt;
+    }
+    .sidebar {
+        position: fixed;
+        width: 200pt;
+        margin-left: -220pt;
+    }
+    .header {
+        text-align: center;
+        top: auto;
+        margin: 3em auto;
+        position: static;
+    }
+}
+@media screen and (min-width: 900pt) {
+    #layout {
+        max-width: 700pt;
+    }
+}

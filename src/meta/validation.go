@@ -7,12 +7,19 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"global"
 )
 
-// 所有字段的验证器,验证器所有输入参数全部是string类型
+// all fields set
 var Valid validators
+var rv reflect.Value
 
 func init() {
+	InitValid()
+}
+
+func InitValid() {
 	Valid = validators{
 		Comment_agent: func(s string) bool {
 			return false
@@ -164,11 +171,10 @@ func init() {
 		Postmeta_id: func(s string) bool {
 			return false
 		},
-		// 保留一些名称拒绝注册,?????
 		Site: func(s string) bool {
-			return IsLenRang(s, 3, 20) &&
+			return s == "" || IsLenRang(s, 3, 20) &&
 				Is09az(s) &&
-				!IsEnum(strings.ToLower(s), "api", "www", "admin", "rss", "blog", "mail", "email", "bug", "bbs", "play")
+				!IsEnum(strings.ToLower(s), global.ReserveSite)
 		},
 		Sitemeta_id: func(s string) bool {
 			return false
@@ -204,7 +210,7 @@ func init() {
 			return IsMd5(s)
 		},
 		User_nicename: func(s string) bool {
-			return IsLenRang(s, 1, 50)
+			return IsLenRang(s, 1, 50) && !IsBadName(s)
 		},
 		User_pass: func(s string) bool {
 			return IsMd5(s)
@@ -216,12 +222,11 @@ func init() {
 			return false
 		},
 	}
-	Valid.v = reflect.ValueOf(Valid)
+	rv = reflect.ValueOf(Valid)
 }
 
 // 所有的字段验证
 type validators struct {
-	v reflect.Value
 	Comment_agent, Comment_author, Comment_author_email, Comment_author_ip,
 	Comment_author_url, Comment_content, Comment_count, Comment_date, Comment_id,
 	Comment_parent, Comment_post_id, Comment_type, Comment_vetoed, Commentmeta_id,
@@ -242,7 +247,7 @@ type validators struct {
 // 根据 name 匹配并验证 v, 如果匹配不到或者验证失败, 返回 false
 func (p *validators) IsValid(name string, v interface{}) bool {
 	name = strings.Title(strings.ToLower(name))
-	fn := p.v.FieldByName(name)
+	fn := rv.FieldByName(name)
 	if !fn.IsValid() {
 		return false
 	}
@@ -291,6 +296,12 @@ func IsId(s string) bool {
 	return err == nil
 }
 
+var badName = regexp.MustCompile(`[\x00-\x2F\x7F　\s\v!"#$%&'()*+,\-./:;<=>?@[\\\]^` + "`{|}~]")
+
+func IsBadName(s string) bool {
+	return badName.MatchString(s)
+}
+
 var emailPattern = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 
 func IsEmail(s string) bool {
@@ -307,8 +318,8 @@ func IsUrl(s string) bool {
 	if strings.Index(s, "//") == -1 {
 		s = "//" + s
 	}
-	v, _ := url.Parse(s)
-	return v.Host != ""
+	v, err := url.Parse(s)
+	return err == nil && v.Host != ""
 }
 
 func IsLenMin(s string, l int) bool {
@@ -330,8 +341,8 @@ func IsLenMax(s string, l int) bool {
 	return true
 }
 
-func IsEnum(s string, v ...string) bool {
-	for _, ss := range v {
+func IsEnum(s string, slice []string) bool {
+	for _, ss := range slice {
 		if ss != s {
 			return false
 		}

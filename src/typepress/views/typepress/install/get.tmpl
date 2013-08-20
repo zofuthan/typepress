@@ -1,0 +1,72 @@
+<div id="layout" class="pure-g-r">
+	<div class="sidebar pure-u">
+		<header class="header">
+			<hgroup>
+				<h1 class="brand-title">TypePress</h1>
+				<h4>三分钟安装</h4>
+			</hgroup>
+		</header>
+		<p class="hero">
+			更多了解 TypePress <br>请查看 <a href="https://github.com/achun/typepress/wiki" target="_blank">Wiki</a>
+		</p>
+	</div>
+	<div class="pure-u-1">
+		<form class="pure-form pure-form-aligned" method="POST">
+			<fieldset>
+				<legend>安全相关</legend>
+				<p>非常重要, 要牢记</p>
+				<div class="pure-control-group">
+					<label>登录名称</label>
+					<input type="text" name="User_login" required autocomplete="off">
+					<sapn>* TypePress 建立此帐号并具有管理权限,至少五个字符</sapn>
+				</div>
+				<div class="pure-control-group">
+					<label>登录密码</label>
+					<input type="password" name="User_pass" required autocomplete="off">
+					<sapn>* 足够复杂的密码是安全的基本保障</sapn>
+				</div>
+				<div class="pure-control-group">
+					<label>确认密码</label>
+					<input type="password" name="confirm" required autocomplete="off">
+				</div>
+			</fieldset>	
+			<fieldset>
+				<legend>数据库相关</legend>
+				<p>数据就保存在这里了</p>
+				<div class="pure-control-group">
+					<label>Host</label>
+					<input type="text" name="Host" placeholder="127.0.0.1:3306">
+					<sapn>Mysql服务器,支持 UNIX SOCKET 风格</sapn>
+				</div>
+				<div class="pure-control-group">
+					<label>Database</label>
+					<input type="text" name="Database" placeholder="typepress">
+					<sapn>如果User够权限,将自动建立,否则请自建</sapn>
+				</div>
+				<div class="pure-control-group">
+					<label>User</label>
+					<input type="text" name="User" placeholder="root">
+				</div>
+				<div class="pure-control-group">
+					<label>Password</label>
+					<input type="password" name="Password">
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>站点相关</legend>
+				<p>这些信息以后可以再次修改</p>
+				<div class="pure-control-group">
+					<label>顶级域名</label>
+					<input type="text" name="Domain" placeholder="{{data.Domain}}">
+					<sapn>如果设定顶级域名, 会拒绝非域名下的访问, 不设定无法实现子域名支持.</sapn>
+				</div>
+				<div class="pure-control-group">
+					<label>端口</label>
+					<input type="text" name="Port" placeholder="{{.Port}}">
+					<sapn>默认的端口 {{$.Port}}, 更改需要重启 TypePress.</sapn>
+				</div>
+			</fieldset>
+			<button class="pure-button pure-button-primary">提交</button>
+		</form>
+	</div>
+</div>
