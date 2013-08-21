@@ -12,7 +12,7 @@ import (
 )
 
 // all fields set
-var Valid validators
+var Valid Validators
 var rv reflect.Value
 
 func init() {
@@ -20,7 +20,7 @@ func init() {
 }
 
 func InitValid() {
-	Valid = validators{
+	Valid = Validators{
 		Comment_agent: func(s string) bool {
 			return false
 		},
@@ -226,7 +226,7 @@ func InitValid() {
 }
 
 // 所有的字段验证
-type validators struct {
+type Validators struct {
 	Comment_agent, Comment_author, Comment_author_email, Comment_author_ip,
 	Comment_author_url, Comment_content, Comment_count, Comment_date, Comment_id,
 	Comment_parent, Comment_post_id, Comment_type, Comment_vetoed, Commentmeta_id,
@@ -245,7 +245,7 @@ type validators struct {
 }
 
 // 根据 name 匹配并验证 v, 如果匹配不到或者验证失败, 返回 false
-func (p *validators) IsValid(name string, v interface{}) bool {
+func (p *Validators) IsValid(name string, v interface{}) bool {
 	name = strings.Title(strings.ToLower(name))
 	fn := rv.FieldByName(name)
 	if !fn.IsValid() {
@@ -261,7 +261,7 @@ func (p *validators) IsValid(name string, v interface{}) bool {
 }
 
 // 验证一个 map ,如果失败, 返回失败的字段名
-func (p *validators) IsValidMap(names map[string]interface{}) string {
+func (p *Validators) IsValidMap(names map[string]interface{}) string {
 	for name, v := range names {
 		if !p.IsValid(name, v) {
 			return name
