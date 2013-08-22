@@ -265,7 +265,7 @@ func Redirect(w http.ResponseWriter, r *http.Request, urlStr string, code int) {
 }
 
 // Subrouter warrper for Mux.Subrouter()
-func Subrouter(name string) *mux.Route {
+func Subrouter(name string) *mux.Router {
 	return Mux.Path("/" + name + "/").Name(name).Subrouter()
 }
 
