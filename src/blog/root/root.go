@@ -1,7 +1,9 @@
-package controllers
+package root
 
 import (
 	"net/http"
+
+	. "controllers"
 )
 
 func init() {

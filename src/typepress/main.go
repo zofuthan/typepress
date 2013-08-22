@@ -10,6 +10,7 @@ import (
 	_ "github.com/achun/db/mysql"
 	"github.com/braintree/manners"
 
+	_ "blog"
 	"controllers"
 	. "global"
 )

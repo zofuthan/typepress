@@ -42,14 +42,6 @@ func init() {
 
 // Export for Doc viewing easy
 func InitGlobal() {
-	log.LogLevelToName[log.LOGLEVEL_DEBUG] = "[D]"
-	log.LogLevelToName[log.LOGLEVEL_INFO] = "[I]"
-	log.LogLevelToName[log.LOGLEVEL_CONFIG] = "[C]"
-	log.LogLevelToName[log.LOGLEVEL_WARN] = "[W]"
-	log.LogLevelToName[log.LOGLEVEL_ERROR] = "[E]"
-	log.LogLevelToName[log.LOGLEVEL_ALERT] = "[A]"
-	log.LogLevelToName[log.LOGLEVEL_FATAL] = "[F]"
-
 	Mux = mux.NewRouter()
 	Mux.StrictSlash(true)
 	LoadConfig()

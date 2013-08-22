@@ -1,4 +1,4 @@
-package controllers
+package install
 
 import (
 	"database/sql"
@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	. "controllers"
 	. "global"
 	"models"
 )
