@@ -102,7 +102,7 @@ func (f HandlerRouter) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// lookup subdirectory of template files for request
+	// lookup subdirectory of template files
 	i, ok = contextSet[KeyViewDir]
 	if ok {
 		dir = i.(string)
@@ -125,22 +125,29 @@ func (f HandlerRouter) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// lookup layout file
 	i, ok = contextSet[KeyLayoutFile]
 	if ok {
 		layout, _ = i.(string)
 	}
 
+	// lookup template file
 	i, ok = contextSet[KeyViewFiles]
 	if ok {
 		viewfile, _ = i.(string)
 	}
 
 	if layout == "" {
-		layout = TplLayout
+		// XMLHttpRequest support
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			layout = "content.html" // {{content}}
+		} else {
+			layout = TplLayout
+		}
 	}
 	layout = filepath.Join(TplPath, TplName, layout)
 
-	// setting viewfiles from request Method
+	// setting viewfile from request Method, if empty
 	if viewfile == "" {
 		viewfile = strings.ToLower(r.Method) + TplExt
 	}
@@ -156,7 +163,8 @@ func (f HandlerRouter) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 			viewfiles[i] = filepath.Join(TplPath, TplName, dir, v)
 		}
 	}
-	LogDebug(0, r, viewfiles)
+
+	// viewfiles[0] is layout, viewfiles[1] is content
 	viewfile = filepath.Base(viewfiles[1])
 	tpl := template.New("")
 	tpl.Builtin()
@@ -245,6 +253,20 @@ func Error(w http.ResponseWriter, r *http.Request, code int, err error, i ...int
 		return true
 	}
 	return false
+}
+
+// wrapper for http.Redirect, for ajax support
+func Redirect(w http.ResponseWriter, r *http.Request, urlStr string, code int) {
+	if r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
+		http.Redirect(w, r, urlStr, code)
+		return
+	}
+	w.Write([]byte(urlStr))
+}
+
+// Subrouter warrper for Mux.Subrouter()
+func Subrouter(name string) *mux.Route {
+	return Mux.Path("/" + name + "/").Name(name).Subrouter()
 }
 
 var (

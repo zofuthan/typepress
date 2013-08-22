@@ -172,9 +172,9 @@ func InitValid() {
 			return false
 		},
 		Site: func(s string) bool {
-			return s == "" || IsLenRang(s, 3, 20) &&
-				Is09az(s) &&
-				!IsEnum(strings.ToLower(s), global.ReserveSite)
+			return len(s) >= 3 && len(s) <= 20 &&
+				IsSite(s) &&
+				!IsEnum(s, global.ReserveSite)
 		},
 		Sitemeta_id: func(s string) bool {
 			return false
@@ -269,6 +269,16 @@ func (p *Validators) IsValidMap(names map[string]interface{}) string {
 	}
 	return ""
 }
+
+func IsSite(s string) bool {
+	for _, b := range s {
+		if !((b >= '0' && b <= '9') || (b >= 'a' && b <= 'z') || b == '-' || b == '_') {
+			return false
+		}
+	}
+	return true
+}
+
 func Is09az(s string) bool {
 	for _, b := range s {
 		if !(b >= '0' && b <= '9') && !(b >= 'a' && b <= 'z') {

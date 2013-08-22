@@ -142,7 +142,7 @@ func InitInstall() {
 		if Error(w, r, 500, Conf.SaveToFile()) {
 			return
 		}
-		w.Write([]byte("/"))
+		Redirect(w, r, "/", 200)
 	}))
 }
 

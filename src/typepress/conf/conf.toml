@@ -8,15 +8,13 @@
 	userid = 0
 	# domain共享根目录, 缺省值 root, 共享静态文件可以放置此处
 	root = ""
-	# 保留站点名称, 拒绝注册
-	reserveSite = ["api", "www", "admin", "rss", "blog", "mail", "email", "bug", "bbs", "play"]
 # 模板相关
 [template]
 	# 模板文件扩展名, 缺省值 .tmpl
 	ext = ""
 	# 所有模板库所在路径, 缺省值 views
 	path = ""
-	# 选用模板子目录名, 对应 path 的子目录名, 缺省值 typepress
+	# 选用模板子目录名, 对应 path 的子目录名, 缺省值 typepress.org
 	name = ""
 	# layout 文件名, 缺省值 layout.html, layout 文件位于 path/name 目录下
 	layout = ""

@@ -1,12 +1,14 @@
 package global
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/achun/db"
 	"github.com/achun/go-toml"
@@ -82,6 +84,25 @@ func LoadConfig() {
 		panic(err)
 	}
 
+	// reserve site list load from conf/reserve_site.txt
+	f, err := os.OpenFile("conf/reserve_site.txt", os.O_RDONLY, 0)
+	if err == nil {
+		defer f.Close()
+		br := bufio.NewReader(f)
+		for {
+			line, err := br.ReadString('\n')
+			if err == io.EOF {
+				break
+			}
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			ReserveSite = append(ReserveSite, line)
+		}
+	}
+
+	// TOML config
 	Conf, err = toml.LoadFile("conf/conf.toml")
 	if err != nil {
 		panic(err)
@@ -112,10 +133,6 @@ func LoadConfig() {
 	BlogId = uint64(Conf.GetDefault("blog.userid", int64(0)).(int64))
 	Port = strconv.Itoa(int(Conf.GetDefault("blog.port", int64(8080)).(int64)))
 	Domain = Conf.GetDefault("blog.domain", "").(string)
-	ai := Conf.GetDefault("blog.reserveSite", []interface{}{}).([]interface{})
-	for _, v := range ai {
-		ReserveSite = append(ReserveSite, v.(string))
-	}
 
 	// [db]
 	OpenDb()
@@ -141,9 +158,9 @@ func LoadConfig() {
 		panic("conf error: invalid template.path: " + TplPath)
 	}
 
-	TplName = Conf.GetDefault("template.name", "typepress").(string)
+	TplName = Conf.GetDefault("template.name", "typepress.org").(string)
 	if TplName == "" {
-		TplName = "typepress"
+		TplName = "typepress.org"
 	}
 
 	str := filepath.Join(TplPath, TplName)

@@ -11,6 +11,8 @@ pkg
 bin
 log
 
+conf.toml
+
 # Architecture specific extensions/prefixes
 *.[568vq]
 [568vq].out
