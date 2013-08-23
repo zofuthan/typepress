@@ -21,6 +21,127 @@ TypePress 提醒最终用户, 使用 TypePress 且不遵守这种保护措施的
 
 整个开发过程在 [Go-Blog-In-Action][6].
 
+## 使用
+
+### 获取源码并移动目录
+
+以我使用机器环境变量
+
+>GOPATH=F:\go
+
+>GOROOT=E:\Go
+
+为例. 使用
+
+```
+go get github.com/achun/typepress
+```
+
+获取源码. 会得到这样的提示
+
+```
+package github.com/achun/typepress
+        imports github.com/achun/typepress
+        imports github.com/achun/typepress: no Go source files in F:\go\src\github.com\achun\typepress
+```
+
+出现 `no Go source files` 是正常的, 因为 TypePress 目录中增加了 `src` 子目录. 其实只是下载了源码, 相关依赖 package 并未得到自动安装.
+
+TypePress 的源码会被下载到
+
+```
+F:\go\src\github.com\achun\typepress
+```
+一定要移动 typepress 目录到 `F:\go\src` 之外的目录, 现实中作者发现, 如果在 `F:\go\src` 之下, `go install` typepress 之下的子 package 会产生多个目标文件分别在
+
+```
+F:\go\src\github.com\achun\typepress\pkg
+```
+
+和
+
+```
+F:\go\pkg\github.com\achun\typepress
+```
+之下, 这会造成一些麻烦. 作者不知道具体原因. 解决办法可以这样
+
+```
+md f:\go\loc
+mv f:\go\src\github.com\achun\typepress f:\go\loc
+```
+
+### 配置开发环境变量
+
+如果使用 `Sublime Text` + `GoSublime`, 可以通过菜单
+
+```
+Preferences -> Package Settings -> GoSublime -> Settings - User
+```
+
+设置
+
+```
+"env": { "GOPATH": "$GOPATH;$GS_GOPATH" }
+```
+
+如果使用 LiteIDE, 可以通过编辑环境变量的方法给相应 `.env` 配置添加绝对路径
+
+```
+GOPATH=F:\go;F:\go\loc\typepress
+```
+
+也可以通过菜单
+
+```
+查看->管理GOPATH
+```
+
+进行添加.
+
+建议不要把 TypePress 路径添加到系统GOPATH中.
+
+### 直接修改 TypePress 源码进行使用
+
+这是最简单的一种使用方法, 当然如果使用这种方法, 复制一份 TypePress 的拷贝进行修改是个好方法.
+
+### 通过 import 方式使用
+
+上面已经把 TypePress 路径已经加入到 `GOPATH` (开发环境下)中, 所以在您的项目中
+
+```go
+import "global"
+```
+
+这种用法完全没有问题, 您也可以用修改环境变量的方法, 把您的项目路径 `$YourPackAgePath` 加入到开发环境的 `GOPATH` 中
+
+```
+"env": { "GOPATH": "$GOPATH;$YourPackAgePath;$GS_GOPATH" }
+```
+或者
+```
+GOPATH=F:\go;$YourPackAgePath;F:\go\loc\typepress
+```
+
+### 需要手工 go get 的 package
+
+例如, 经过上面的设置后, 在 Sublime Text 中把 TypePress 目录加入 FOLDERS 并 `go build` `main.go`.
+有可能会遇到
+```
+cannot find package "github.com/achun/db" in any of: ...
+```
+这样的错误, 原因就是前面所述 TypePress 所依赖的 package 没有被自动安装造成的.
+
+您需要手工 go get 那些缺失的 package. 下面的代码方便您使用, 也许还有其他.
+```
+go get -u github.com/achun/template
+go get -u github.com/achun/log
+go get -u github.com/achun/db
+go get -u github.com/achun/go-toml
+go get -u github.com/gorilla/context
+go get -u github.com/gorilla/mux
+go get -u github.com/braintree/manners
+```
+
 ## License
 
 TypePress 采用
