@@ -87,7 +87,7 @@ Preferences -> Package Settings -> GoSublime -> Settings - User
 如果使用 LiteIDE, 可以通过编辑环境变量的方法给相应 `.env` 配置添加绝对路径
 
 ```
-GOPATH=F:\go;F:\go\src\github.com\achun\typepress
+GOPATH=F:\go;F:\go\loc\typepress
 ```
 
 也可以通过菜单
@@ -119,7 +119,7 @@ import "global"
 ```
 或者
 ```
-GOPATH=F:\go;$YourPackAgePath;F:\go\src\github.com\achun\typepress
+GOPATH=F:\go;$YourPackAgePath;F:\go\loc\typepress
 ```
 
 ### 需要手工 go get 的 package
