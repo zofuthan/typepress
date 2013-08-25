@@ -37,7 +37,7 @@ TypePress 提醒最终用户, 使用 TypePress 且不遵守这种保护措施的
 go get github.com/achun/typepress
 ```
 
-会得到这样的提示
+获取源码. 会得到这样的提示
 
 ```
 package github.com/achun/typepress
@@ -46,6 +46,29 @@ package github.com/achun/typepress
 ```
 
 出现 `no Go source files` 是正常的, 因为 TypePress 目录中增加了 `src` 子目录. 其实只是下载了源码, 相关依赖 package 并未得到自动安装.
+
+TypePress 的源码会被下载到
+
+```
+F:\go\src\github.com\achun\typepress
+```
+一定要移动 typepress 目录到 `F:\go\src` 之外的目录, 现实中作者发现, 如果在 `F:\go\src` 之下, `go install` typepress 之下的子 package 会产生多个目标文件分别在
+
+```
+F:\go\src\github.com\achun\typepress\pkg
+```
+
+和
+
+```
+F:\go\pkg\github.com\achun\typepress
+```
+之下, 这会造成一些麻烦. 作者不知道具体原因. 解决办法可以这样
+
+```
+md f:\go\loc
+mv f:\go\src\github.com\achun\typepress f:\go\loc
+```
 
 ### 配置开发环境变量
 
