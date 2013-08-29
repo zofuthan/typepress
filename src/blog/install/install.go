@@ -3,13 +3,18 @@ package install
 import (
 	"database/sql"
 	"errors"
-	"github.com/achun/db"
+	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/achun/db"
+	"github.com/gorilla/sessions"
 
 	. "controllers"
 	. "global"
@@ -30,7 +35,8 @@ func InitInstall() {
 		dat["Port"] = Port
 		dat["Domain"] = Domain
 	}))
-	inst.Methods("post").Handler(HandlerParseForm(true, func(w http.ResponseWriter, r *http.Request) {
+	inst.Methods("post").Handler(HandlerParseForm(func(w http.ResponseWriter, r *http.Request) {
+		SkipRender(r)
 		var err error
 		// setting domain
 		mp, ok := FetchValueExists(r.Form, "Domain", "Port")
@@ -87,7 +93,7 @@ func InitInstall() {
 			Password: mp["Password"].(string),
 		}
 		switch DbDriver {
-		case "mysql":
+		case "", "mysql":
 			ds.Database = "mysql"
 		case "postgresql":
 			ds.Database = "pg_database"
@@ -121,14 +127,9 @@ func InitInstall() {
 		}
 
 		// setting first user
-		mp, ok = FetchValueExists(r.Form, "User_login", "User_pass")
-		if !ok {
-			Error(w, r, 400, errors.New("Invalid arguments for admin user"))
-			return
-		}
-		mp["Site"] = ""
-		mp["User_nicename"] = "TypePress"
-		ids, err := models.Users.Append(mp)
+		r.Form.Set("Site", "blog")
+		r.Form.Set("User_nicename", "TypePress")
+		ids, err := models.Users.Append(r)
 		if Error(w, r, 400, err) {
 			return
 		}
@@ -140,9 +141,18 @@ func InitInstall() {
 			return
 		}
 		Conf.Set("blog.userid", int64(BlogId))
+
+		// setting session.secret
+		ran := rand.New(rand.NewSource(time.Now().UnixNano()))
+		secret := ""
+		for i := 0; i < 16; i++ {
+			secret += fmt.Sprintf("%x", ran.Intn(65535))
+		}
+		Conf.Set("session.secret", secret)
 		if Error(w, r, 500, Conf.SaveToFile()) {
 			return
 		}
+		SessionStore = sessions.NewFilesystemStore(Conf.GetDefault("session.path", "").(string), []byte(Conf.GetDefault("session.secret", "").(string)))
 		Redirect(w, r, "/", 200)
 	}))
 }

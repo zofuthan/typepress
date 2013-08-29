@@ -89,17 +89,19 @@ func FireMuxAfter(wr http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-var events = []func(code int, r *http.Request, i ...interface{}) bool{}
+type EventKey string
+
+var events = []func(code int, r *http.Request, key string, i ...interface{}) bool{}
 
 // register function on events
-func OnEvent(f func(code int, r *http.Request, i ...interface{}) bool) {
+func OnEvent(f func(code int, r *http.Request, key string, i ...interface{}) bool) {
 	events = append(events, f)
 }
 
 // fire functions on events
-func FireEvent(code int, r *http.Request, i ...interface{}) bool {
+func FireEvent(code int, r *http.Request, key string, i ...interface{}) bool {
 	for _, f := range events {
-		if !f(code, r, i...) {
+		if !f(code, r, key, i...) {
 			return false
 		}
 	}

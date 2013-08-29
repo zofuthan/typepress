@@ -1,0 +1,31 @@
+<form class="pure-form pure-form-aligned" method="POST" action="/signup/">
+	<fieldset>
+		<legend>注册新帐号</legend>
+		<p>注册之前请务必阅读 <a href="#" target="_blank">新用户注册</a> </p>
+		<div class="pure-control-group">
+			<label>登录名称</label>
+			<input type="text" name="User_login" required autocomplete="off">
+			<sapn>* 一定要牢记, 推荐使用您的邮箱地址</sapn>
+		</div>
+		<div class="pure-control-group">
+			<label>显示昵称</label>
+			<input type="text" name="User_nicename" required autocomplete="off">
+			<sapn>* 公开显示的名字</sapn>
+		</div>
+		<div class="pure-control-group">
+			<label>登录密码</label>
+			<input type="password" name="User_pass" required autocomplete="off">
+			<sapn>* 足够复杂的密码是帐号安全的基础</sapn>
+		</div>
+		<div class="pure-control-group">
+			<label>确认密码</label>
+			<input type="password" name="confirm" required autocomplete="off">
+		</div>
+		<div class="pure-control-group">
+			<label>子域名</label>
+			<input type="text" name="Site" required autocomplete="off">
+			<sapn>* 由 0到9, a到z,"-"和"_" 组成, 不能是纯数字, 最长20个字符</sapn>
+		</div>
+	</fieldset>
+	<button class="pure-button pure-button-primary">提交</button>
+</form>

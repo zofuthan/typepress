@@ -7,7 +7,6 @@ atom
 author
 authors
 bbs
-blog
 book
 buy
 case
@@ -52,6 +51,7 @@ ns4
 oauth
 play
 plugin
+preview
 proxy
 pub
 public
@@ -64,6 +64,7 @@ rss
 server
 servers
 session
+sessions
 shop
 source
 sub

@@ -3,6 +3,7 @@
 *.a
 *.so
 *.bat
+*.toml
 
 # Folders
 _obj
@@ -10,8 +11,6 @@ _test
 pkg
 bin
 log
-
-*.toml
 
 # Architecture specific extensions/prefixes
 *.[568vq]

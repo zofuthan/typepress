@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/achun/template"
@@ -22,27 +25,24 @@ func InitPress() {
 	Mux.NotFoundHandler = http.HandlerFunc(StaticFile)
 }
 
-// ContextKey for stores a value in a given request
-type ContextKey int
-
-const (
-	KeyViewDat    ContextKey = iota // map[interface{}]interface{}, data for render template
-	KeyContext                      // context body, do not use for template
-	KeySkipRender                   // skip auto render for anything set
-	KeyLayoutFile                   // string, customize name of layout file base on TplPath
-	KeyViewDir                      // string, customize subdirectory for template file base on TplName
-	KeyViewFiles                    // string, customize name of template file
-)
-
 // wrapper for mux Handler
 type HandlerMux func(http.ResponseWriter, *http.Request)
 
 func (f HandlerMux) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 	wr.Header().Set("Server", "TypePress")
+	// init KeyContext for controller
+	contextSet := make(map[interface{}]interface{})
+	contextSet[KeyWriter] = wr
+	context.Set(r, KeyContext, contextSet)
+
 	if !FireMuxBefore(wr, r) {
 		return
 	}
-	f(wr, r)
+
+	if contextSet[KeyStopRoute] == nil {
+		f(wr, r)
+	}
+
 	FireMuxAfter(wr, r)
 }
 
@@ -55,8 +55,8 @@ type HandlerRouter func(http.ResponseWriter, *http.Request)
 func (f HandlerRouter) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			http.Error(wr, "500 Internal Server Error", 500)
 			_, file, line, _ := runtime.Caller(4)
+			http.Error(wr, "500 Internal Server Error: "+file+" "+strconv.Itoa(line), 500)
 			FireEvent(500, r, "PanicOnHandlerRouter", file, line)
 		} else {
 			FireEvent(200, r, "deferHandlerRouter")
@@ -73,37 +73,45 @@ func (f HandlerRouter) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// setting KeyContext for controller
-	contextSet := make(map[interface{}]interface{})
-	context.Set(r, KeyContext, contextSet)
 	var dir, layout, viewfile string
 
 	// init view dat association to request for template
 	dat := map[interface{}]interface{}{}
 	context.Set(r, KeyViewDat, dat)
+	contextSet := GetContext(r)
 
 	// filter
 	if !FireRouteBefore(wr, r) {
 		return
 	}
 
+	if contextSet[KeyStopRoute] != nil {
+		return
+	}
 	// call controller handler
 	f(wr, r)
+
+	if contextSet[KeyStopRoute] != nil {
+		return
+	}
 
 	// after filter
 	if !FireRouteAfter(wr, r) {
 		return
 	}
 
+	if contextSet[KeyStopRoute] != nil {
+		return
+	}
+
 	// skip render ify anything setting of KeySkipRender
-	i, ok := contextSet[KeySkipRender]
-	if ok {
+	if contextSet[KeySkipRender] != nil {
 		FireEvent(200, r, "skipRenderOnHandlerRouter")
 		return
 	}
 
 	// lookup subdirectory of template files
-	i, ok = contextSet[KeyViewDir]
+	i, ok := contextSet[KeyViewDir]
 	if ok {
 		dir = i.(string)
 	}
@@ -203,11 +211,8 @@ func HandleFunc(f func(http.ResponseWriter, *http.Request)) *mux.Route {
 }
 
 // wrapper for mux router HandlerFunc and auto ParseForm
-func HandlerParseForm(render bool, f func(http.ResponseWriter, *http.Request)) HandlerRouter {
+func HandlerParseForm(f func(http.ResponseWriter, *http.Request)) HandlerRouter {
 	return HandlerRouter(func(w http.ResponseWriter, r *http.Request) {
-		if !render {
-			SkipRender(r)
-		}
 		if Error(w, r, 400, r.ParseForm()) {
 			return
 		}
@@ -215,53 +220,59 @@ func HandlerParseForm(render bool, f func(http.ResponseWriter, *http.Request)) H
 	})
 }
 
-// GetViewDat returns a key-value map stored for a given request.
-func GetViewDat(r *http.Request) map[interface{}]interface{} {
-	return context.Get(r, KeyViewDat).(map[interface{}]interface{})
+// wrapper for mux router HandlerFunc and auto ParseForm with CAPTCHA
+func HandlerCaptcha(f func(http.ResponseWriter, *http.Request)) HandlerRouter {
+	return HandlerRouter(func(w http.ResponseWriter, r *http.Request) {
+		if Error(w, r, 400, r.ParseForm()) || !CaptchaOk(w, r) {
+			return
+		}
+		f(w, r)
+	})
 }
 
-// SetViewDat setting key-value to map stored for a given request.
-func SetViewDat(r *http.Request, key, value interface{}) {
-	mp := GetViewDat(r)
-	dat := mp[KeyViewDat].(map[interface{}]interface{})
-	dat[key] = value
-}
-
-// SkipRender set KeySkipRender of map stored for a given request.
-func SkipRender(r *http.Request) {
-	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
-	mp[KeySkipRender] = true
-}
-
-// ViewFiles set KeyViewFiles of map stored for a given request.
-func ViewFiles(r *http.Request, filenames string) {
-	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
-	mp[KeyViewFiles] = filenames
-}
-
-// LayoutFile set KeyLayoutFile of map stored for a given request.
-func LayoutFile(r *http.Request, filename string) {
-	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
-	mp[KeyLayoutFile] = filename
+// HandleSignin for user must be logged in to pass
+func HandleSignin(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sess, err := GetSession(r)
+		if Error(w, r, 500, err) {
+			StopRoute(r)
+			return
+		}
+		if sess.Values["user"] == nil {
+			StopRoute(r)
+			Error(w, r, 403, errors.New("you must be signed"))
+			return
+		}
+		f(w, r)
+	}
 }
 
 // wrapper for http.Error
-func Error(w http.ResponseWriter, r *http.Request, code int, err error, i ...interface{}) bool {
+func Error(wr http.ResponseWriter, r *http.Request, code int, err error, i ...interface{}) bool {
 	if err != nil {
-		http.Error(w, err.Error(), code)
-		FireEvent(code, r, "handlerError", err.Error(), i)
+		SkipRender(r)
+		if FireEvent(code, r, "handlerError", err.Error(), i) {
+			http.Error(wr, err.Error(), code)
+		}
 		return true
 	}
 	return false
 }
 
+// wrapper for io.Writer
+func Write(wr io.Writer, str string) (int, error) {
+	return wr.Write([]byte(str))
+}
+
 // wrapper for http.Redirect, for ajax support
-func Redirect(w http.ResponseWriter, r *http.Request, urlStr string, code int) {
+func Redirect(wr http.ResponseWriter, r *http.Request, urlStr string, code int) {
 	if r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
-		http.Redirect(w, r, urlStr, code)
+		http.Redirect(wr, r, urlStr, 302)
 		return
 	}
-	w.Write([]byte(urlStr))
+	wr.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	wr.WriteHeader(code)
+	wr.Write([]byte(urlStr))
 }
 
 // Subrouter warrper for Mux.Subrouter()

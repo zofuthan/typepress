@@ -12,6 +12,6 @@ func init() {
 
 // Export for Doc viewing easy
 func InitRoot() {
-	HandleFunc(func(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(func(wr http.ResponseWriter, r *http.Request) {
 	}).Path("/").Name("root").Methods("get")
 }

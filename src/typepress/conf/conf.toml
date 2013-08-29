@@ -8,6 +8,14 @@
 	userid = 0
 	# domain共享根目录, 缺省值 root, 共享静态文件可以放置此处
 	root = ""
+[session]
+	# 基于文件系统的 session 存储路径, 缺省值 "" 使用 os.TempDir()
+	path = ""
+	# 加密 session 用的密钥, 请妥善保管, 切勿外泄.
+	# 安装程序会自动生成一个随机密钥
+	# 更改密匙会造成以往的 session 不可用.
+	# 也可以通过修改 main.go 手工设定密匙
+	secret = ""
 # 模板相关
 [template]
 	# 模板文件扩展名, 缺省值 .tmpl

@@ -24,16 +24,7 @@ func InitValid() {
 		Comment_agent: func(s string) bool {
 			return false
 		},
-		Comment_author: func(s string) bool {
-			return false
-		},
-		Comment_author_email: func(s string) bool {
-			return false
-		},
-		Comment_author_ip: func(s string) bool {
-			return false
-		},
-		Comment_author_url: func(s string) bool {
+		Comment_ip: func(s string) bool {
 			return false
 		},
 		Comment_content: func(s string) bool {
@@ -49,9 +40,6 @@ func InitValid() {
 			return false
 		},
 		Comment_parent: func(s string) bool {
-			return false
-		},
-		Comment_post_id: func(s string) bool {
 			return false
 		},
 		Comment_type: func(s string) bool {
@@ -227,9 +215,9 @@ func InitValid() {
 
 // 所有的字段验证
 type Validators struct {
-	Comment_agent, Comment_author, Comment_author_email, Comment_author_ip,
-	Comment_author_url, Comment_content, Comment_count, Comment_date, Comment_id,
-	Comment_parent, Comment_post_id, Comment_type, Comment_vetoed, Commentmeta_id,
+	Comment_agent, Comment_ip,
+	Comment_content, Comment_count, Comment_date, Comment_id,
+	Comment_parent, Comment_type, Comment_vetoed, Commentmeta_id,
 	Count, Description, Guid, Link_description, Link_id, Link_image, Link_notes,
 	Link_rating, Link_rel, Link_rss, Link_target, Link_title, Link_updated, Link_url,
 	Link_vetoed,
@@ -271,10 +259,22 @@ func (p *Validators) IsValidMap(names map[string]interface{}) string {
 }
 
 func IsSite(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	onlyNumber := true
 	for _, b := range s {
-		if !((b >= '0' && b <= '9') || (b >= 'a' && b <= 'z') || b == '-' || b == '_') {
-			return false
+		if b >= '0' && b <= '9' {
+			continue
 		}
+		onlyNumber = false
+		if (b >= 'a' && b <= 'z') || b == '-' || b == '_' {
+			continue
+		}
+		return false
+	}
+	if onlyNumber || s[0] == '-' || s[0] == '_' {
+		return false
 	}
 	return true
 }
@@ -353,11 +353,11 @@ func IsLenMax(s string, l int) bool {
 
 func IsEnum(s string, slice []string) bool {
 	for _, ss := range slice {
-		if ss != s {
-			return false
+		if ss == s {
+			return true
 		}
 	}
-	return true
+	return false
 }
 func IsLenRang(s string, min, max int) bool {
 	if min > max {

@@ -2,6 +2,8 @@ package global
 
 import (
 	"bufio"
+	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +16,9 @@ import (
 	"github.com/achun/go-toml"
 	"github.com/achun/log"
 	"github.com/braintree/manners"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 // global object
@@ -24,6 +28,8 @@ var (
 	GracefulListen *manners.GracefulListener // shutDown support
 	Mux            *mux.Router               // http request router
 	Db             db.Database               // Database
+	DbSql          *sql.DB                   // Raw sql.DB, init by main.go
+	SessionStore   sessions.Store            // sessions Store
 	DbDriver       string                    // database driver name
 	DocRoot        string                    // WEB document root
 	BlogId         uint64                    // user_id for top domain blog home
@@ -34,7 +40,37 @@ var (
 	TplName        string                    // selected name(subdirectory) for template
 	TplLayout      string                    // layuout file fullname for template
 	ReserveSite    []string                  // reserve name for register site
+	Lang           string                    // default language for go code
 )
+
+const (
+	SessionName = "sessionid"
+)
+
+// ContextKey for stores a value in a given request
+type ContextKey string
+
+const (
+	KeyViewDat    = ContextKey("viewDat") // map[interface{}]interface{}, data for render template
+	KeyContext    = ContextKey("context") // context body, do not use for template
+	KeySkipRender = "skipRender"          // skip auto render for anything set
+	KeyLayoutFile = "layoutFile"          // string, customize name of layout file base on TplPath
+	KeyViewDir    = "viewDir"             // string, customize subdirectory for template file base on TplName
+	KeyViewFiles  = "viewFiles"           // string, customize name of template file
+	KeyWriter     = "writer"              // http.ResponseWriter
+	KeyStopRoute  = "stop"                // stop route process
+)
+
+// I18n reserved
+var I18n func(*http.Request, string, ...interface{}) string
+
+// I18n DbError
+var DbError func(code int, r *http.Request, err error) error
+
+// Check Captcha
+var CaptchaOk = func(w http.ResponseWriter, r *http.Request) bool {
+	return true
+}
 
 func init() {
 	InitGlobal()
@@ -42,17 +78,46 @@ func init() {
 
 // Export for Doc viewing easy
 func InitGlobal() {
+	if I18n == nil {
+		I18n = func(r *http.Request, s string, i ...interface{}) string {
+			if len(i) == 0 {
+				return s
+			}
+			if strings.Index(s, "%") == -1 {
+				return s + fmt.Sprint(i...)
+			}
+			return fmt.Sprintf(s, i...)
+		}
+	}
+
+	if DbError == nil {
+		DbError = func(code int, r *http.Request, err error) error {
+			if err == nil {
+				return nil
+			}
+			FireEvent(code, r, "dbError", err.Error())
+			str, ok := context.GetOk(r, EventKey("dbError"))
+			if !ok || str.(string) == "" {
+				return err
+			}
+			return errors.New(str.(string))
+		}
+	}
+
 	Mux = mux.NewRouter()
 	Mux.StrictSlash(true)
 	LoadConfig()
 }
+
 func OpenDb(dss ...db.DataSource) error {
 	var ds db.DataSource
-	if len(dss) == 0 {
+	if DbDriver == "" {
 		DbDriver = Conf.GetDefault("db.Driver", "mysql").(string)
-		if DbDriver == "" {
-			DbDriver = "mysql"
-		}
+	}
+	if DbDriver == "" {
+		DbDriver = "mysql"
+	}
+	if len(dss) == 0 {
 		ds.Host = Conf.GetDefault("db.Host", "").(string)
 		ds.Port = int(Conf.GetDefault("db.Port", 0).(int64))
 		ds.Socket = Conf.GetDefault("db.Socket", "").(string)
@@ -83,17 +148,16 @@ func LoadConfig() {
 		br := bufio.NewReader(f)
 		for {
 			line, err := br.ReadString('\n')
-			if err == io.EOF {
-				break
-			}
 			line = strings.TrimSpace(line)
 			if line == "" {
+				if err == io.EOF {
+					break
+				}
 				continue
 			}
 			ReserveSite = append(ReserveSite, line)
 		}
 	}
-
 	// TOML config
 	Conf, err = toml.LoadFile("conf/conf.toml")
 	if err != nil {
@@ -125,9 +189,6 @@ func LoadConfig() {
 	BlogId = uint64(Conf.GetDefault("blog.userid", int64(0)).(int64))
 	Port = strconv.Itoa(int(Conf.GetDefault("blog.port", int64(8080)).(int64)))
 	Domain = Conf.GetDefault("blog.domain", "").(string)
-
-	// [db]
-	OpenDb()
 
 	// [template]
 	TplExt = Conf.GetDefault("template.ext", ".tmpl").(string)
@@ -225,12 +286,14 @@ func LoadConfig() {
 
 // Log easy for Request
 func logEasy(code int, r *http.Request, a []interface{}) (ret []interface{}) {
-	ret = append(ret,
-		code, " ",
-		r.RemoteAddr, " ",
-		r.Method, " ",
-		fmt.Sprintf("%#v %#v", r.URL.Path, r.UserAgent()),
-	)
+	ret = append(ret, code, " ")
+	if r != nil {
+		ret = append(ret,
+			r.RemoteAddr, " ",
+			r.Method, " ",
+			fmt.Sprintf("%#v %#v", r.URL.Path, r.UserAgent()),
+		)
+	}
 	for _, i := range a {
 		ret = append(ret, fmt.Sprintf(" %#v", i))
 	}
@@ -256,4 +319,76 @@ func LogAlert(code int, r *http.Request, i ...interface{}) {
 }
 func LogFatal(code int, r *http.Request, i ...interface{}) {
 	Log.Fatal(logEasy(code, r, i)...)
+}
+
+// GetViewDat returns a key-value map stored for a given request with KeyViewDat.
+func GetViewDat(r *http.Request) map[interface{}]interface{} {
+	return context.Get(r, KeyViewDat).(map[interface{}]interface{})
+}
+
+// SetViewDat setting key-value to map stored for a given request with KeyViewDat.
+func SetViewDat(r *http.Request, key, value interface{}) {
+	mp := context.Get(r, KeyViewDat).(map[interface{}]interface{})
+	mp[key] = value
+}
+
+// GetContext returns a key-value map stored for a given request with KeyContext.
+func GetContext(r *http.Request) map[interface{}]interface{} {
+	return context.Get(r, KeyContext).(map[interface{}]interface{})
+}
+
+// SetContext setting key-value to map stored for a given request with KeyContext.
+func SetContext(r *http.Request, key, value interface{}) {
+	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
+	mp[key] = value
+}
+
+// SkipRender set KeySkipRender of map stored for a given request.
+func SkipRender(r *http.Request) {
+	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
+	mp[KeySkipRender] = true
+}
+
+// SkipRender set KeySkipRender of map stored for a given request.
+func StopRoute(r *http.Request) {
+	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
+	mp[KeyStopRoute] = true
+}
+
+// ViewFiles set KeyViewFiles of map stored for a given request.
+func ViewFiles(r *http.Request, filenames string) {
+	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
+	mp[KeyViewFiles] = filenames
+}
+
+// LayoutFile set KeyLayoutFile of map stored for a given request.
+func LayoutFile(r *http.Request, filename string) {
+	mp := context.Get(r, KeyContext).(map[interface{}]interface{})
+	mp[KeyLayoutFile] = filename
+}
+
+// GetSession
+func GetSession(r *http.Request) (*sessions.Session, error) {
+	sess, err := SessionStore.Get(r, SessionName)
+	if err != nil {
+		r.Header.Del("Cookie")
+		sess, err = NewSession(r)
+	}
+	return sess, err
+}
+
+// NewSession
+func NewSession(r *http.Request) (*sessions.Session, error) {
+	sess, err := SessionStore.New(r, SessionName)
+	if err != nil {
+		r.Header.Del("Cookie")
+		sess, err = SessionStore.New(r, SessionName)
+	}
+	sess.Options.HttpOnly = true
+	return sess, err
+}
+
+// SaveSession
+func SaveSession(r *http.Request, wr http.ResponseWriter, sess *sessions.Session) error {
+	return sess.Save(r, wr)
 }
